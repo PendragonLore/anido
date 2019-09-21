@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import contextlib
+import pathlib
 import sys
 
 import httpx
+import tqdm
 import yarl
 from lxml import etree
 
-client = httpx.Client()
+client = httpx.Client(timeout=30.0)
 
 
 def request_and_return_tree(url):
@@ -15,7 +17,27 @@ def request_and_return_tree(url):
         if response.status_code != 200:
             raise RuntimeError(f"Request responded with {response.status_code} ({response.reason_phrase})")
 
-        return etree.fromstring(response.text, etree.HTMLParser())
+        return etree.fromstring(response.text, etree.HTMLParser(encoding="utf-8"))
+
+
+def download_episode(url):
+    filename = yarl.URL(url).path.split("/")[-1]
+    file = pathlib.Path(filename)
+
+    try:
+        file.touch(exist_ok=False)
+    except FileExistsError:
+        raise RuntimeError(f"File {filename} already exists, won't overwrite it.")
+
+    with contextlib.closing(client.get(url, stream=True)) as response:
+        with tqdm.tqdm(
+                total=int(response.headers["content-length"]),
+                unit_scale=True, unit="B", unit_divisor=4096,
+                ncols=100, dynamic_ncols=True
+        ) as pbar, file.open("wb") as f:
+            for chunk in response.stream():
+                f.write(chunk)
+                pbar.update(len(chunk))
 
 
 def extract_search_results(query):
@@ -31,7 +53,7 @@ def extract_search_results(query):
 
     if not results:
         print("No results found, exiting.")
-        exit(0)
+        sys.exit(0)
 
     print(f"Found {len(results)} result(s), extracting data...")
 
@@ -50,7 +72,7 @@ def extract_search_results(query):
     inp = input("Which would you like to view? (input 0 to exit) >> ")
 
     if inp == "0":
-        exit(0)
+        sys.exit(0)
 
     try:
         return results[int(inp) - 1][0]
@@ -89,17 +111,26 @@ def extract_direct_download_links(url):
             actual = another_tree.xpath("//div[@id='wtf']/a")[0]
             print(f"Episode {index: <3} -> {actual.get('href')}")
 
+            t = input("Would you like to download it?")
+
+            if t.lower() == "y":
+                download_episode(actual.get('href'))
+
 
 def main():
     if len(sys.argv) == 1:
         print("No arguments provided.\n"
               "This *would* return the latest episodes out, but that isn't supported... yet.\n"
               "So, goodbye.")
-        exit(2)
+        sys.exit(2)
 
     picked = extract_search_results(" ".join(sys.argv[1:]))
     extract_direct_download_links(picked)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        # no pointless noise
+        print("\nExited as requested.")
