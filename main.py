@@ -10,18 +10,18 @@ from anido import SearchResultParser, StreamDownloader, StreamPageParser
 session = requests.Session()
 
 
-@click.group()
+@click.group(help="Stream downloader for animeforce.org")
 def main():
     pass
 
 
-@main.command(name="search")
+@main.command(name="search", help="Display search results from a query.")
 @click.argument("query", nargs=-1)
 def cmd_search(query):
     extract_search_results(" ".join(query))
 
 
-@main.command(name="download")
+@main.command(name="download", help="Download episodes from a search result.")
 @click.option("--all", "_all", help="Whether to download all episodes available.",
               required=False, default=False, is_flag=True)
 @click.argument("query", nargs=-1)
