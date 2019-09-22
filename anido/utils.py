@@ -30,3 +30,4 @@ class AtomicFile:
             # win is gay
             self.temp.close()
             shutil.copy2(self.temp.name, self.file.resolve())
+            os.remove(self.temp.name)
