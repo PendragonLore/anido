@@ -24,6 +24,7 @@ def cmd_search(query):
 @main.command(name="download", help="Download episodes from a search result.")
 @click.option("--all", "_all", help="Whether to download all episodes available.",
               required=False, default=False, is_flag=True)
+# TODO: add support to set the path to download
 @click.argument("query", nargs=-1)
 def cmd_download(query, _all):
     results = extract_search_results("".join(query))
@@ -49,13 +50,15 @@ def extract_search_results(query):
         click.echo("No results found, exiting.")
         sys.exit(0)
 
-    click.echo(f"Found {len(results)} result(s), extracting data...")
+    count = len(results)
+    result_fmt = click.style(f"{count} {'results' if count > 1 else 'result'}", fg='green')
+    click.echo(f"Found {result_fmt}, extracting data...")
 
     click.echo("-" * 20)
     click.echo()
 
     for index, result in enumerate(results, 1):
-        click.echo(f"{index}. {result.text} ( {result.url} )")
+        click.echo(f"{click.style(str(index), fg='bright_blue')}. {result.text} ( {result.url} )")
 
     click.echo()
     click.echo("-" * 20)
@@ -69,16 +72,19 @@ def extract_direct_download_links(url, *, download_all):
     parser = StreamPageParser(url, session)
 
     for index, (url, is_downloadable) in enumerate(parser.parse(), 1):
+        episode = f"{click.style(str(index), fg='bright_blue'): <3}"
+
         # vvvvid or something friendly probably
         if not is_downloadable:
             # TODO: actually scrape the episode number (since it could also be an OVA, special episode, etc...)
-            click.echo(f"Episode {index: <3} is not downloadable -> {url}")
+            click.echo(f"Episode {episode}"
+                       f"is {click.style('not', fg='red')} downloadable -> {url}")
             continue
 
         actual_url = parser.get_episode_direct_url(url)
 
         # TODO: see above lol
-        click.echo(f"Episode {index: <3} -> {actual_url}")
+        click.echo(f"Episode {episode} -> {actual_url}")
 
         downloader = StreamDownloader(session, actual_url)
 
