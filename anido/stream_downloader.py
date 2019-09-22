@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
-import shutil
-import tempfile
 import urllib.parse
 
 from tqdm import tqdm
+
+from .utils import AtomicFile
 
 
 class MaybeProgressBar(tqdm):
@@ -45,11 +45,9 @@ class StreamDownloader:
     def download(self):
         file = self.prepare_file()
 
-        with tempfile.NamedTemporaryFile("wb") as ftemp:
+        with AtomicFile(file) as f:
             for chunk in self.stream():
-                ftemp.write(chunk)
-
-            shutil.copy2(ftemp.name, file.resolve())
+                f.write(chunk)
 
     def prepare_file(self):
         filename = urllib.parse.urlparse(self.url).path.split("/")[-1]
