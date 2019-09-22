@@ -15,6 +15,8 @@ class ParseResult:
 
 
 class SearchResultParser:
+    __slots__ = ("url", "session", "results")
+
     def __init__(self, url: str, query: dict, session: requests.Session):
         self.url = f"{url}?{urllib.parse.urlencode(query, doseq=True)}"
         self.session = session

@@ -24,6 +24,8 @@ class MaybeProgressBar(tqdm):
 
 
 class StreamDownloader:
+    __slots__ = ("session", "url", "filename", "path")
+
     CHUNK_SIZE = 1024 * 4
 
     def __init__(self, session, url, path):

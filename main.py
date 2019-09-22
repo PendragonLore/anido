@@ -4,7 +4,6 @@ import sys
 
 import click
 import requests
-import pathlib
 
 from anido import SearchResultParser, StreamDownloader, StreamPageParser
 
@@ -27,8 +26,12 @@ def cmd_search(query):
               required=False, default=False, is_flag=True)
 @click.option("--path", help="The path to download the files to.",
               type=click.Path(file_okay=False, exists=True, writable=True))
+@click.option("--chunk-size", "chunk_size", help="The chunk size to stream in bytes, defaults to 4kb.",
+              type=int, default=1024 * 4)
 @click.argument("query", nargs=-1)
-def cmd_download(query, _all, path):
+def cmd_download(query, _all, path, chunk_size):
+    StreamDownloader.CHUNK_SIZE = chunk_size
+
     results = extract_search_results("".join(query))
 
     if len(results) == 1:

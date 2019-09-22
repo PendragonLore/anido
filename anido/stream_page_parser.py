@@ -6,6 +6,8 @@ from . import utils
 
 
 class StreamPageParser:
+    __slots__ = ("url", "session")
+
     def __init__(self, url, session):
         self.url = url
         self.session = session

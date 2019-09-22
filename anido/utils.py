@@ -13,6 +13,8 @@ def request_tree(session, url):
 
 
 class AtomicFile:
+    __slots__ = ("file", "temp")
+
     def __init__(self, file):
         self.file = file
         self.temp = open(f"{file.resolve()}-{uuid.uuid4().hex}.temp", "wb+")
