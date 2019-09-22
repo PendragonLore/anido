@@ -5,7 +5,7 @@ import sys
 import click
 import requests
 
-from amido import SearchResultParser, StreamDownloader, StreamPageParser
+from anido import SearchResultParser, StreamDownloader, StreamPageParser
 
 session = requests.Session()
 
