@@ -11,5 +11,5 @@ source venv/bin/activate
 # install the deps
 pip install -r requirements.txt
 # run it
-python main.py steins gate
+python main.py download Haikyuu --all
 ````
