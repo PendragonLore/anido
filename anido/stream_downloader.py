@@ -26,10 +26,11 @@ class MaybeProgressBar(tqdm):
 class StreamDownloader:
     CHUNK_SIZE = 1024 * 4
 
-    def __init__(self, session, url):
+    def __init__(self, session, url, path):
         self.session = session
         self.url = url
         self.filename = None
+        self.path = path
 
     def stream(self, show_progress=True):
         with self.session.get(self.url, stream=True) as response:
@@ -48,11 +49,11 @@ class StreamDownloader:
             for chunk in self.stream():
                 ftemp.write(chunk)
 
-            shutil.copy2(ftemp.name, file.name)
+            shutil.copy2(ftemp.name, file.resolve())
 
     def prepare_file(self):
         filename = urllib.parse.urlparse(self.url).path.split("/")[-1]
-        file = pathlib.Path(filename)
+        file = pathlib.Path(self.path, filename)
 
         try:
             file.touch(exist_ok=False)

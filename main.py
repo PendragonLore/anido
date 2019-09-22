@@ -4,6 +4,7 @@ import sys
 
 import click
 import requests
+import pathlib
 
 from anido import SearchResultParser, StreamDownloader, StreamPageParser
 
@@ -24,9 +25,10 @@ def cmd_search(query):
 @main.command(name="download", help="Download episodes from a search result.")
 @click.option("--all", "_all", help="Whether to download all episodes available.",
               required=False, default=False, is_flag=True)
-# TODO: add support to set the path to download
+@click.option("--path", help="The path to download the files to.",
+              type=click.Path(file_okay=False, exists=True, writable=True))
 @click.argument("query", nargs=-1)
-def cmd_download(query, _all):
+def cmd_download(query, _all, path):
     results = extract_search_results("".join(query))
 
     if len(results) == 1:
@@ -40,7 +42,7 @@ def cmd_download(query, _all):
         except IndexError:
             return click.echo("That index isn't present in the list.")
 
-    extract_direct_download_links(to_download.url, download_all=_all)
+    extract_direct_download_links(to_download.url, path, download_all=_all)
 
 
 def extract_search_results(query):
@@ -66,7 +68,7 @@ def extract_search_results(query):
     return results
 
 
-def extract_direct_download_links(url, *, download_all):
+def extract_direct_download_links(url, path, *, download_all):
     click.echo("\nExtracting direct urls...")
 
     parser = StreamPageParser(url, session)
@@ -86,7 +88,7 @@ def extract_direct_download_links(url, *, download_all):
         # TODO: see above lol
         click.echo(f"Episode {episode} -> {actual_url}")
 
-        downloader = StreamDownloader(session, actual_url)
+        downloader = StreamDownloader(session, actual_url, path)
 
         if download_all:
             downloader.download()
