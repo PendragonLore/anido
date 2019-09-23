@@ -35,8 +35,9 @@ def cmd_download(query, _all, path, chunk_size):
     results = extract_search_results(" ".join(query))
 
     if len(results) == 1:
-        click.confirm(f"Going to download {results[0].text}, is that ok?", abort=True)
-        to_download = results[0]
+        ret = results[0]
+        click.confirm(f"Going to download {ret[1]}, is that ok?", abort=True)
+        to_download = ret
     else:
         prompt = click.prompt("Please pick a series by index", type=int)
 
@@ -45,15 +46,15 @@ def cmd_download(query, _all, path, chunk_size):
         except IndexError:
             return click.echo("That index isn't present in the list.")
 
-    extract_direct_download_links(to_download.url, path, download_all=_all)
+    extract_direct_download_links(to_download[0], path, download_all=_all)
 
 
 def extract_search_results(query):
     results = SearchResultParser("https://ww1.animeforce.org", {"s": query}, session).parse()
 
     if not results:
-        click.echo("No results found, exiting.")
-        sys.exit(0)
+        click.echo("No results found.")
+        raise click.Abort()
 
     count = len(results)
     result_fmt = click.style(f"{count} {'results' if count > 1 else 'result'}", fg='green')
@@ -62,8 +63,8 @@ def extract_search_results(query):
     click.echo("-" * 20)
     click.echo()
 
-    for index, result in enumerate(results, 1):
-        click.echo(f"{click.style(str(index), fg='bright_blue')}. {result.text} ( {result.url} )")
+    for index, (url, text) in enumerate(results, 1):
+        click.echo(f"{click.style(str(index), fg='bright_blue')}. {text} ( {url} )")
 
     click.echo()
     click.echo("-" * 20)
