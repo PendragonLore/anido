@@ -25,14 +25,14 @@ def cmd_search(query):
 @click.option("--all", "_all", help="Whether to download all episodes available.",
               required=False, default=False, is_flag=True)
 @click.option("--path", help="The path to download the files to.",
-              type=click.Path(file_okay=False, exists=True, writable=True))
+              type=click.Path(file_okay=False, exists=True, writable=True), default="./")
 @click.option("--chunk-size", "chunk_size", help="The chunk size to stream in bytes, defaults to 4kb.",
               type=int, default=1024 * 4)
 @click.argument("query", nargs=-1)
 def cmd_download(query, _all, path, chunk_size):
     StreamDownloader.CHUNK_SIZE = chunk_size
 
-    results = extract_search_results("".join(query))
+    results = extract_search_results(" ".join(query))
 
     if len(results) == 1:
         click.confirm(f"Going to download {results[0].text}, is that ok?", abort=True)
