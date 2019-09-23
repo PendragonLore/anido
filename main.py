@@ -93,20 +93,20 @@ def extract_direct_download_links(url, path, *, download_all):
 
         downloader = StreamDownloader(session, actual_url, path)
 
-        if download_all:
+        def do_download():
             try:
                 downloader.download()
-            except RuntimeError as e:
-                click.echo(click.style(str(e), fg="red"))
+            except RuntimeError as exc:
+                click.echo(click.style(str(exc), fg="red"))
+
+        if download_all:
+            do_download()
             continue
 
         if click.confirm(
                 "Would you like to download this episode? (pass the --all option when starting to download all)"
         ):
-            try:
-                downloader.download()
-            except RuntimeError as e:
-                click.echo(click.style(str(e), fg="red"))
+            do_download()
 
 
 if __name__ == "__main__":

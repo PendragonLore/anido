@@ -39,17 +39,15 @@ class StreamDownloader:
             with MaybeProgressBar(
                     actually_show=show_progress, total=int(response.headers["content-length"]),
                     unit_scale=True, unit_divisor=1024, unit="B", ncols=100
-            ) as bar:
+            ) as progress_bar:
                 for chunk in response.iter_content(self.CHUNK_SIZE):
                     yield chunk
-                    bar.update(len(chunk))
+                    progress_bar.update(len(chunk))
 
     def download(self):
-        file = self.prepare_file()
-
-        with AtomicFile(file) as f:
+        with AtomicFile(self.prepare_file()) as file:
             for chunk in self.stream():
-                f.write(chunk)
+                file.write(chunk)
 
     def prepare_file(self):
         filename = urllib.parse.urlparse(self.url).path.split("/")[-1]

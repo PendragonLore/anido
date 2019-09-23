@@ -18,7 +18,8 @@ class StreamPageParser:
         for node in tree.xpath("//div/table[2]/tbody/tr")[1:]:
             yield self.normalize_result_url(node.find("./td[2]/a").get("href"))
 
-    def normalize_result_url(self, url):
+    @staticmethod
+    def normalize_result_url(url):
         url = url.lstrip("/")
 
         if not url.startswith("http") and not url.startswith("ds.php"):
