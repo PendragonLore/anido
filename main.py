@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import typing
+
 import click
 import requests
 
@@ -47,7 +49,7 @@ def cmd_download(query, _all, path, chunk_size):
     extract_direct_download_links(to_download[0], path, download_all=_all)
 
 
-def extract_search_results(query):
+def extract_search_results(query: str) -> typing.List[typing.Tuple[str, str]]:
     results = SearchResultParser("https://ww1.animeforce.org", {"s": query}, session).parse()
 
     if not results:
@@ -70,7 +72,7 @@ def extract_search_results(query):
     return results
 
 
-def extract_direct_download_links(url, path, *, download_all):
+def extract_direct_download_links(url: str, path: str, *, download_all: bool):
     click.echo("\nExtracting direct urls...")
 
     parser = StreamPageParser(url, session)

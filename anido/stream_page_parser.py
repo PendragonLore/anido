@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import typing
 import urllib.parse
+
+import requests
 
 from . import utils
 
@@ -8,18 +11,18 @@ from . import utils
 class StreamPageParser:
     __slots__ = ("url", "session")
 
-    def __init__(self, url, session):
-        self.url = url
-        self.session = session
+    def __init__(self, url: str, session: requests.Session):
+        self.url: str = url
+        self.session: requests.Session = session
 
-    def parse(self):
+    def parse(self) -> typing.Iterator[str]:
         tree = utils.request_tree(self.session, self.url)
 
         for node in tree.xpath("//div/table[2]/tbody/tr")[1:]:
             yield self.normalize_result_url(node.find("./td[2]/a").get("href"))
 
     @staticmethod
-    def normalize_result_url(url):
+    def normalize_result_url(url: str) -> typing.Tuple[str, bool]:
         url = url.lstrip("/")
 
         if not url.startswith("http") and not url.startswith("ds.php"):
@@ -34,7 +37,7 @@ class StreamPageParser:
 
         return url, has_filename
 
-    def get_episode_direct_url(self, url):
+    def get_episode_direct_url(self, url: str):
         tree = utils.request_tree(self.session, url)
 
         return tree.find(".//div[@id='wtf']/a").get("href")

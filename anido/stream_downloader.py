@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
+import typing
 import urllib.parse
 
+import requests
 from tqdm import tqdm
 
 from .utils import AtomicFile
@@ -10,7 +12,7 @@ from .utils import AtomicFile
 
 class MaybeProgressBar(tqdm):
     def __init__(self, *args, **kwargs):
-        self.actually_show = kwargs.pop("actually_show")
+        self.actually_show: bool = kwargs.pop("actually_show")
         super().__init__(*args, **kwargs)
 
     def __enter__(self):
@@ -26,15 +28,15 @@ class MaybeProgressBar(tqdm):
 class StreamDownloader:
     __slots__ = ("session", "url", "filename", "path")
 
-    CHUNK_SIZE = 1024 * 4
+    CHUNK_SIZE: int = 1024 * 4
 
-    def __init__(self, session, url, path):
-        self.session = session
-        self.url = url
-        self.filename = None
-        self.path = path
+    def __init__(self, session: requests.Session, url: str, path: str):
+        self.session: requests.Session = session
+        self.url: str = url
+        self.filename: typing.Optional[str] = None
+        self.path: str = path
 
-    def stream(self, show_progress=True):
+    def stream(self, show_progress: bool = True) -> typing.Iterator[bytes]:
         with self.session.get(self.url, stream=True) as response:
             with MaybeProgressBar(
                     actually_show=show_progress, total=int(response.headers["content-length"]),
@@ -44,12 +46,12 @@ class StreamDownloader:
                     yield chunk
                     progress_bar.update(len(chunk))
 
-    def download(self):
-        with AtomicFile(self.prepare_file()) as file:
-            for chunk in self.stream():
+    def download(self, show_progress: bool = True):
+        with AtomicFile(self.prepare_file(), "wb") as file:
+            for chunk in self.stream(show_progress=show_progress):
                 file.write(chunk)
 
-    def prepare_file(self):
+    def prepare_file(self) -> pathlib.Path:
         filename = urllib.parse.urlparse(self.url).path.split("/")[-1]
         file = pathlib.Path(self.path, filename)
 
