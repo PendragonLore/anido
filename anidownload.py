@@ -50,7 +50,7 @@ def cmd_download(query, _all, path, chunk_size):
 
 
 def extract_search_results(query: str) -> typing.List[typing.Tuple[str, str]]:
-    results = SearchResultParser("https://ww1.animeforce.org", {"s": query}, session).parse()
+    results = list(reversed(SearchResultParser("https://ww1.animeforce.org", {"s": query}, session).parse()))
 
     if not results:
         click.echo("No results found.")

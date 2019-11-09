@@ -19,9 +19,9 @@ class SearchResultParser:
 
     def parse(self) -> typing.List[typing.Tuple[str, str]]:
         tree = utils.request_tree(self.session, self.url)
-        self.results = ret = tree.xpath("//div[@class='article-excerpt']/h2/a")
+        self.results = ret = tree.xpath("//div[contains(@class, 'anime-card')]/div")
 
-        return [(node.get("href"), node.text) for node in ret]
+        return [(node.find("./a").get("href"), node.find("./div/p/a/span").text.strip()) for node in ret]
 
     @property
     def has_results(self) -> bool:
