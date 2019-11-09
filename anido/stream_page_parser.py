@@ -37,7 +37,11 @@ class StreamPageParser:
 
         return url, has_filename
 
-    def get_episode_direct_url(self, url: str):
+    def get_episode_direct_url(self, url: str) -> typing.Optional[str]:
         tree = utils.request_tree(self.session, url)
+        a = tree.find(".//div[@id='wtf']/a")
 
-        return tree.find(".//div[@id='wtf']/a").get("href")
+        if a is None:
+            return None
+
+        return a.get("href")

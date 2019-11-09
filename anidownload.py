@@ -89,6 +89,10 @@ def extract_direct_download_links(url: str, path: str, *, download_all: bool):
 
         actual_url = parser.get_episode_direct_url(url)
 
+        if actual_url is None:
+            click.echo("No other episodes available for download, exiting.")
+            raise click.Abort()
+
         # TODO: see above lol
         click.echo(f"Episode {episode} -> {actual_url}")
 
