@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import typing
+from typing import List, Optional, Tuple
 
 import click
 import requests
 
 from anido import SearchResultParser, StreamDownloader, StreamPageParser
+from range_param_type import RangeType
 
-session = requests.Session()
+SESSION = requests.Session()
 
 
 @click.group(help="Stream downloader for animeforce.org")
@@ -28,8 +29,11 @@ def cmd_search(query):
               type=click.Path(file_okay=False, exists=True, writable=True), default="./")
 @click.option("--chunk-size", "chunk_size", help="The chunk size to stream in bytes, defaults to 4kb.",
               type=int, default=1024 * 4)
+@click.option("--range", "-r", "_range", type=RangeType(), default=None,
+              help="The range of episodes to download, must be formatted like so: start:end:step.\n"
+                   "Defaults to downloading all episodes.")
 @click.argument("query", nargs=-1)
-def cmd_download(query, _all, path, chunk_size):
+def cmd_download(query, _all, path, chunk_size, _range):
     StreamDownloader.CHUNK_SIZE = chunk_size
 
     results = extract_search_results(" ".join(query))
@@ -44,18 +48,19 @@ def cmd_download(query, _all, path, chunk_size):
         try:
             to_download = results[prompt - 1]
         except IndexError:
-            return click.echo("That index isn't present in the list.")
+            click.echo("That index isn't present in the list.")
+            return
 
-    extract_direct_download_links(to_download[0], path, download_all=_all)
+    extract_direct_download_links(to_download[0], path, download_all=_all, episode_range=_range)
 
 
-def extract_search_results(query: str) -> typing.List[typing.Tuple[str, str]]:
+def extract_search_results(query: str) -> List[Tuple[str, str]]:
     qs = {
         "s": query,
         "cat": "6010"
     }
 
-    results = list(reversed(SearchResultParser("https://ww1.animeforce.org", qs, session).parse()))
+    results = list(reversed(SearchResultParser("https://ww1.animeforce.org", qs, SESSION).parse()))
 
     if not results:
         click.echo("No results found.")
@@ -77,18 +82,17 @@ def extract_search_results(query: str) -> typing.List[typing.Tuple[str, str]]:
     return results
 
 
-def extract_direct_download_links(url: str, path: str, *, download_all: bool):
+def extract_direct_download_links(url: str, path: str, *, download_all: bool, episode_range: Optional[range]):
     click.echo("\nExtracting direct urls...")
 
-    parser = StreamPageParser(url, session)
+    parser = StreamPageParser(url, SESSION)
 
-    for index, (url, is_downloadable) in enumerate(parser.parse(), 1):
-        episode = f"{click.style(str(index), fg='bright_blue'): <3}"
+    for title, url, is_downloadable in parser.parse(episode_range):
+        episode = f"{click.style(str(title.replace('Episodio', 'Episode')), fg='bright_blue'): <3}"
 
         # vvvvid or something friendly probably
         if not is_downloadable:
-            # TODO: actually scrape the episode number (since it could also be an OVA, special episode, etc...)
-            click.echo(f"Episode {episode}"
+            click.echo(f"{episode}"
                        f"is {click.style('not', fg='red')} downloadable -> {url}")
             continue
 
@@ -98,16 +102,15 @@ def extract_direct_download_links(url: str, path: str, *, download_all: bool):
             click.echo("No other episodes available for download, exiting.")
             raise click.Abort()
 
-        # TODO: see above lol
-        click.echo(f"Episode {episode} -> {actual_url}")
+        click.echo(f"{episode} -> {actual_url}")
 
-        downloader = StreamDownloader(session, actual_url, path)
+        downloader = StreamDownloader(SESSION, actual_url, path)
 
         def do_download():
             try:
                 downloader.download()
             except RuntimeError as exc:
-                click.echo(click.style(str(exc), fg="red"))
+                click.secho(str(exc), fg="red")
 
         if download_all:
             do_download()
@@ -123,4 +126,4 @@ if __name__ == "__main__":
     try:
         main()
     finally:
-        session.close()
+        SESSION.close()

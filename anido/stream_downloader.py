@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import pathlib
-import typing
 import urllib.parse
+from typing import Iterator, Optional
 
 import requests
 from tqdm import tqdm
@@ -33,10 +33,10 @@ class StreamDownloader:
     def __init__(self, session: requests.Session, url: str, path: str):
         self.session: requests.Session = session
         self.url: str = url
-        self.filename: typing.Optional[str] = None
+        self.filename: Optional[str] = None
         self.path: str = path
 
-    def stream(self, show_progress: bool = True) -> typing.Iterator[bytes]:
+    def stream(self, show_progress: bool = True) -> Iterator[bytes]:
         with self.session.get(self.url, stream=True) as response:
             with MaybeProgressBar(
                     actually_show=show_progress, total=int(response.headers["content-length"]),

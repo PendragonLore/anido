@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import typing
 import urllib.parse
+from typing import Iterator, Optional, Tuple
 
 import requests
 
@@ -15,14 +15,25 @@ class StreamPageParser:
         self.url: str = url
         self.session: requests.Session = session
 
-    def parse(self) -> typing.Iterator[str]:
+    def parse(self, episode_range: Optional[range] = None) -> Iterator[Tuple[str, str, bool]]:
         tree = utils.request_tree(self.session, self.url)
 
-        for node in tree.xpath("//div/table[2]/tbody/tr")[1:]:
-            yield self.normalize_result_url(node.find("./td[2]/a").get("href"))
+        if episode_range is None:
+            sli = slice(1, None)
+        else:
+            # necessary because we need to skip the first element
+            # if the range is 0
+            start = episode_range.start or (episode_range.start + 1)
+            sli = slice(start, episode_range.stop + 1, episode_range.step)
+
+        for node in tree.xpath("//div/table[2]/tbody/tr")[sli]:
+            yield (
+                node.find("./td[1]/strong").text.strip(),
+                *self.normalize_result_url(node.find("./td[2]/a").get("href"))
+            )
 
     @staticmethod
-    def normalize_result_url(url: str) -> typing.Tuple[str, bool]:
+    def normalize_result_url(url: str) -> Tuple[str, bool]:
         url = url.lstrip("/")
 
         if not url.startswith("http") and not url.startswith("ds.php"):
@@ -37,11 +48,11 @@ class StreamPageParser:
 
         return url, has_filename
 
-    def get_episode_direct_url(self, url: str) -> typing.Optional[str]:
+    def get_episode_direct_url(self, url: str) -> Optional[str]:
         tree = utils.request_tree(self.session, url)
-        a = tree.find(".//div[@id='wtf']/a")
+        hyperlink = tree.find(".//div[@id='wtf']/a")
 
-        if a is None:
+        if hyperlink is None:
             return None
 
-        return a.get("href")
+        return hyperlink.get("href")

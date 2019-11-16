@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import typing
 import urllib.parse
+from typing import List, Optional, Tuple
 
 import requests
 from lxml.etree import _Element as EtreeElement
@@ -15,13 +15,16 @@ class SearchResultParser:
     def __init__(self, url: str, query: dict, session: requests.Session):
         self.url: str = f"{url}?{urllib.parse.urlencode(query, doseq=True)}"
         self.session: requests.Session = session
-        self.results: typing.Optional[typing.List[EtreeElement]] = None
+        self.results: Optional[List[EtreeElement]] = None
 
-    def parse(self) -> typing.List[typing.Tuple[str, str]]:
+    def parse(self) -> List[Tuple[str, str]]:
         tree = utils.request_tree(self.session, self.url)
         self.results = ret = tree.xpath("//div[contains(@class, 'anime-card')]/div")
 
-        return [(node.find("./a").get("href"), node.find("./div/p/a/span").text.strip()) for node in ret]
+        return [(
+            node.find("./a").get("href"),
+            node.find("./div/p/a/span").text.strip()
+        ) for node in ret]
 
     @property
     def has_results(self) -> bool:
